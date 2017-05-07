@@ -33,10 +33,11 @@ class Game(object):
 		self.rpressed = False
 
 	def start(self):
-		self.players.append(Snake(0, 0, self.board))
-		self.players.append(Snake(GRID_W - 1, GRID_H - 1, self.board, Snake.LEFT, [0,0,255]))
 		self.powerups.append(GhostPU(self.board))
 		self.powerups.append(SpeedPU(self.board))
+
+		self.players.append(Snake(0, 0, self.board))
+		self.players.append(Snake(GRID_W - 1, GRID_H - 1, self.board, Snake.LEFT, [0,0,255]))
 
 		self.running = True
 

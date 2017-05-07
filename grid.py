@@ -36,7 +36,7 @@ class Grid(object):
 				if item is None:
 					item = '~'
 
-				gstr += str(item) + ' '
+				gstr += str(item)
 
 			gstr += '\n'
 

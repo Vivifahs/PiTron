@@ -124,10 +124,10 @@ class Snake(GameObject):
 				self.y += 1
 
 			# Check if Snake if out of bounds
-			if self.x > self.board.cols or self.x < 0:
+			if self.x >= self.board.cols or self.x < 0:
 				self.die()
 				return
-			if self.y > self.board.rows or self.y < 0:
+			if self.y >= self.board.rows or self.y < 0:
 				self.die()
 				return
 
