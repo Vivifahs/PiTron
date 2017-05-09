@@ -16,7 +16,9 @@ CELL_SIZE = 8
 GRID_W = (WINDOW_W - GRID_OFFSET_X * 2) / CELL_SIZE
 GRID_H = (WINDOW_H - GRID_OFFSET_Y * 2) / CELL_SIZE
 
-print GRID_W, GRID_H
+BACKGROUND = "space2.png"
+
+UPDATE_GRID = (GRID_OFFSET_X, GRID_OFFSET_Y, GRID_W * CELL_SIZE, GRID_H * CELL_SIZE)
 
 class Game(object):
 	def __init__(self):
@@ -37,6 +39,10 @@ class Game(object):
 		self.rpressed = False
 
 		self.font = pygame.font.SysFont("monospace", 15)
+		self.background = pygame.image.load(BACKGROUND).convert()
+		self.background_rect = self.background.get_rect()
+
+		#self.display.blit(self.background, self.background_rect)
 
 	def start(self):
 		self.powerups.append(GhostPU(self.board))
@@ -44,6 +50,8 @@ class Game(object):
 
 		self.players.append(Snake(0, 0, self.board))
 		self.players.append(Snake(GRID_W - 1, GRID_H - 1, self.board, Snake.LEFT, [0,0,255]))
+		self.players.append(Snake(0, GRID_H - 1, self.board, color=[225, 0, 225]))
+		
 
 		self.running = True
 
@@ -53,6 +61,8 @@ class Game(object):
 	def loop(self):
 		while self.running:
 			delta = self.clock.tick()
+
+			print self.clock.get_fps()
 
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
@@ -78,6 +88,15 @@ class Game(object):
 			if keys[K_s]:
 				self.players[0].move(Snake.DOWN)
 
+			if keys[K_l]:
+				self.players[2].move(Snake.RIGHT)
+			if keys[K_j]:
+				self.players[2].move(Snake.LEFT)
+			if keys[K_i]:
+				self.players[2].move(Snake.UP)
+			if keys[K_k]:
+				self.players[2].move(Snake.DOWN)
+
 			if keys[K_ESCAPE]:
 				self.running = False
 
@@ -100,6 +119,8 @@ class Game(object):
 
 	def draw(self):
 		self.display.fill((0,0,0))
+
+		self.display.blit(self.background, self.background_rect)
 
 		self.board.render(self.display)
 
