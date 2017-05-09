@@ -82,8 +82,10 @@ class Snake(GameObject):
 	def die(self):
 		self.alive = False
 
-		for cell in self.cells:
-			self.board.setCell(None, cell.x, cell.y)
+		#for cell in self.cells:
+		#	self.board.setCell(None, cell.x, cell.y)
+
+		self.setDelay(1)
 
 		print 'Dead!'
 
@@ -145,6 +147,11 @@ class Snake(GameObject):
 
 			# Update board
 			self.board.setCell(self, self.x, self.y)
+		else:
+			if len(self.cells) > 0:
+				cell = self.cells[len(self.cells) - 1]
+				self.board.setCell(None, cell.x, cell.y)
+				self.cells.remove(cell)
 
 	def __str__(self):
 		return 'S'

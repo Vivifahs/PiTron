@@ -15,8 +15,8 @@ class Powerup(GameObject):
 	def reposition(self):
 		self.board.setCell(None, self.x, self.y)
 
-		self.x = randint(1, self.board.cols)
-		self.y = randint(1, self.board.rows)
+		self.x = randint(1, self.board.cols - 1)
+		self.y = randint(1, self.board.rows - 1)
 
 		self.board.setCell(self, self.x, self.y)
 

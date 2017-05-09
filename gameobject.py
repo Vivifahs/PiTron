@@ -30,8 +30,8 @@ class GameObject(object):
 
 	# Draw to screen
 	def render(self, surface):
-		x = self.x * self.board.cellsize
-		y = self.y * self.board.cellsize
+		x = self.x * self.board.cellsize + self.board.offsetx
+		y = self.y * self.board.cellsize + self.board.offsety
 
 		#print 'drawing {} at ({},{})'.format(str(self), x, y)
 		surface.blit(self.image, (x, y))

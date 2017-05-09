@@ -6,20 +6,24 @@ from snake import Snake
 import pygame
 import sys
 
-WINDOW_W = 800
-WINDOW_H = 600
+WINDOW_W = 1024
+WINDOW_H = 768
 
-GRIDSIZE = 8
+GRID_OFFSET_X = 152
+GRID_OFFSET_Y = 24
+CELL_SIZE = 8
 
-GRID_W = WINDOW_W / GRIDSIZE
-GRID_H = WINDOW_H / GRIDSIZE
+GRID_W = (WINDOW_W - GRID_OFFSET_X * 2) / CELL_SIZE
+GRID_H = (WINDOW_H - GRID_OFFSET_Y * 2) / CELL_SIZE
+
+print GRID_W, GRID_H
 
 class Game(object):
 	def __init__(self):
 		self.display = pygame.display.set_mode((WINDOW_W,WINDOW_H), pygame.HWSURFACE)
 		pygame.display.set_caption('PiTron')
 
-		self.board = Grid(GRID_W, GRID_H, GRIDSIZE)
+		self.board = Grid(GRID_W, GRID_H, CELL_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y)
 
 		self.powerups = []
 		self.players = []
@@ -32,6 +36,8 @@ class Game(object):
 		self.lpressed = False
 		self.rpressed = False
 
+		self.font = pygame.font.SysFont("monospace", 15)
+
 	def start(self):
 		self.powerups.append(GhostPU(self.board))
 		self.powerups.append(SpeedPU(self.board))
@@ -41,7 +47,7 @@ class Game(object):
 
 		self.running = True
 
-		print self.board
+		#print self.board
 		self.loop()
 
 	def loop(self):
@@ -96,7 +102,13 @@ class Game(object):
 		self.display.fill((0,0,0))
 
 		self.board.render(self.display)
-		
+
+		for i in range(len(self.players)):
+			string = "Player {}: {}".format(i + 1, 'Alive' if self.players[i].alive else 'Dead ')
+			img = self.font.render(string, 1, self.players[i].color)
+			pos = (i * (self.font.size(string)[0] + 10) + GRID_OFFSET_X, 0)
+			self.display.blit(img, pos)
+
 		pygame.display.update()
 
 	def cleanup(self):
