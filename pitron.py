@@ -20,6 +20,11 @@ BACKGROUND = "space2.png"
 
 UPDATE_GRID = (GRID_OFFSET_X, GRID_OFFSET_Y, GRID_W * CELL_SIZE, GRID_H * CELL_SIZE)
 
+POS_1 = (GRID_W / 2, 0) # Top
+POS_2 = (GRID_W - 1, GRID_H / 2) # Right
+POS_3 = (GRID_W / 2, GRID_H - 1) # Bottom
+POS_4 = (0, GRID_H / 2) # Left
+
 class Game(object):
 	def __init__(self):
 		self.display = pygame.display.set_mode((WINDOW_W,WINDOW_H), pygame.HWSURFACE)
@@ -48,10 +53,10 @@ class Game(object):
 		self.powerups.append(GhostPU(self.board))
 		self.powerups.append(SpeedPU(self.board))
 
-		self.players.append(Snake(0, 0, self.board))
-		self.players.append(Snake(GRID_W - 1, GRID_H - 1, self.board, Snake.LEFT, [0,0,255]))
-		self.players.append(Snake(0, GRID_H - 1, self.board, color=[225, 0, 225]))
-		
+		self.players.append(Snake(POS_1[0], POS_1[1], self.board, Snake.DOWN))
+		self.players.append(Snake(POS_2[0], POS_2[1], self.board, Snake.LEFT, [0,0,255]))
+		self.players.append(Snake(POS_3[0], POS_3[1], self.board, Snake.UP, [225, 0, 225]))
+		self.players.append(Snake(POS_4[0], POS_4[1], self.board, Snake.RIGHT, [255,255,0]))
 
 		self.running = True
 
@@ -96,6 +101,15 @@ class Game(object):
 				self.players[2].move(Snake.UP)
 			if keys[K_k]:
 				self.players[2].move(Snake.DOWN)
+
+			if keys[K_h]:
+				self.players[3].move(Snake.RIGHT)
+			if keys[K_f]:
+				self.players[3].move(Snake.LEFT)
+			if keys[K_t]:
+				self.players[3].move(Snake.UP)
+			if keys[K_g]:
+				self.players[3].move(Snake.DOWN)
 
 			if keys[K_ESCAPE]:
 				self.running = False

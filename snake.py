@@ -33,6 +33,7 @@ class Snake(GameObject):
 
 		# List of SnakeCells belonging to this Snake
 		self.cells = []
+		self.cellcolor = [x / 1.5 for x in color]
 
 		# Timers
 		self.timers = {}
@@ -112,7 +113,7 @@ class Snake(GameObject):
 
 		if self.alive:
             # Leave SnakeCell behind
-			snakecell = SnakeCell(self.x, self.y, self.board, self.color)
+			snakecell = SnakeCell(self.x, self.y, self.board, self.cellcolor)
 			self.cells.append(snakecell)
 	
             # Update position
