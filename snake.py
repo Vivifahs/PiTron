@@ -79,16 +79,24 @@ class Snake(GameObject):
 			if self.direction != Snake.UP:
 				self.changedir = Snake.DOWN
 
-	# Kill this Snake and remove its SnakeCells
+	# Change the direction either clockwise or counter-clockwise
+	def changeDirection(self, direction):
+		self.changedir = self.direction + direction
+
+		if self.changedir > Snake.DOWN:
+			self.changedir = Snake.LEFT
+		elif self.changedir < Snake.LEFT:
+			self.changedir = Snake.DOWN
+
+	# Kill this Snake and remove its SnakeCells / timers
 	def die(self):
 		self.alive = False
 
-		#for cell in self.cells:
-		#	self.board.setCell(None, cell.x, cell.y)
-
-		self.setDelay(1)
-
-		print 'Dead!'
+		self.setDelay(10)
+		
+		for key in self.timers.keys():
+			if key is not 'update':
+				del self.timers[key]
 
     # Tick each timer and call their callbacks if necessary
 	def update(self, delta):
@@ -140,7 +148,7 @@ class Snake(GameObject):
 					item = self.board.getCell(self.x, self.y)
 
                     # Apply effect if item is a Powerup, otherwise die
-					if isinstance(item, Powerup):
+					if hasattr(item, 'applyEffectTo'):
 						item.applyEffectTo(self)
 					else:
 						self.die()

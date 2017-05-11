@@ -10,9 +10,9 @@ class Powerup(GameObject):
 		self.currtime = self.lifetime
 		self.used = False
 
-		self.reposition()
+		self.randposition()
 
-	def reposition(self):
+	def randposition(self):
 		self.board.setCell(None, self.x, self.y)
 
 		self.x = randint(1, self.board.cols - 1)
