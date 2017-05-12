@@ -30,7 +30,11 @@ POS_4 = (0, GRID_H / 2) # Left
 class Game(object):
 	def __init__(self):
 		# Set up display
-		flags = pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.FULLSCREEN
+		flags = pygame.HWSURFACE | pygame.DOUBLEBUF
+
+		if 'fullscreen' in sys.argv:
+			flags = flags | pygame.FULLSCREEN
+
 		self.display = pygame.display.set_mode((WINDOW_W,WINDOW_H), flags)
 		self.display.set_alpha(None)
 		pygame.display.set_caption('PiTron')
@@ -54,6 +58,8 @@ class Game(object):
 						2 : [pygame.K_f, pygame.K_h, False, False], \
 						3 : [pygame.K_j, pygame.K_l, False, False]}
 
+		self.inputs = {}
+
 		# Text rendering
 		self.font = pygame.font.SysFont("monospace", 15)
 		
@@ -76,10 +82,11 @@ class Game(object):
 		self.renderblanked = False
 
 		# Powerup spawning
-		self.spawnfreq = 5
+		self.spawnfreq = 10
 
 		# Gamestate
 		self.running = False
+		self.oneleft = False
 
 	def start(self):
 		self.powerupclasses.append(GhostPU)
@@ -88,9 +95,17 @@ class Game(object):
 		self.powerupclasses.append(WidthPU)
 
 		self.players.append(Snake(POS_1[0], POS_1[1], self.board, Snake.DOWN))
-		self.players.append(Snake(POS_2[0], POS_2[1], self.board, Snake.LEFT, [0,0,255]))
-		self.players.append(Snake(POS_3[0], POS_3[1], self.board, Snake.UP, [225, 0, 225]))
-		self.players.append(Snake(POS_4[0], POS_4[1], self.board, Snake.RIGHT, [255,255,0]))
+		self.players.append(Snake(POS_3[0], POS_3[1], self.board, Snake.UP, [0,0,255]))
+
+		self.inputs[0] = [pygame.K_a, pygame.K_d, False, False]
+		self.inputs[1] = [pygame.K_LEFT, pygame.K_RIGHT, False, False]
+
+		if '4p' in sys.argv:
+			self.players.append(Snake(POS_2[0], POS_2[1], self.board, Snake.LEFT, [225, 0, 225]))
+			self.players.append(Snake(POS_4[0], POS_4[1], self.board, Snake.RIGHT, [255,255,0]))
+
+			self.inputs[2] = [pygame.K_f, pygame.K_h, False, False]
+			self.inputs[3] = [pygame.K_j, pygame.K_l, False, False]
 
 		self.running = True
 
@@ -115,7 +130,7 @@ class Game(object):
 
 			if self.fliptimer <= 0:
 				self.fliptimer = 5000
-				#self.flipped = not self.flipped
+				self.flipped = not self.flipped
 
 			# Handle render pausing
 			if not self.renderblanked:
@@ -182,7 +197,7 @@ class Game(object):
 	def update(self, delta):
 		for snake in self.players:
 			snake.update(delta)
-		
+
 		for powerup in self.powerups:
 			powerup.update(delta)
 
@@ -280,6 +295,9 @@ class Game(object):
 
 # Entrypoint
 if __name__ == '__main__':
+	args = sys.argv
+	print args
+
 	pygame.init()
 
 	game = Game()
