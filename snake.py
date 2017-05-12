@@ -28,12 +28,13 @@ class Snake(GameObject):
 		self.changedir = None
 
 		# Flags
+		self.wide = False
 		self.collision = True
 		self.alive = True
 
 		# List of SnakeCells belonging to this Snake
 		self.cells = []
-		self.cellcolor = [x / 1.5 for x in color]
+		self.cellcolor = [x / 1.2 for x in color]
 
 		# Timers
 		self.timers = {}
@@ -45,6 +46,15 @@ class Snake(GameObject):
 
 	def enableCollision(self):
 		self.collision = True
+
+	def widen(self):
+		self.wide = True
+
+	def thin(self):
+		self.wide = False
+
+	def getDelay(self):
+		return self.timers['update'][1]
 
 	def setDelay(self, delay):
 		self.timers['update'][0] = delay
@@ -112,7 +122,7 @@ class Snake(GameObject):
 
 				timer[2]()
 
-	# Actuall update the Snake
+	# Actually update the Snake
 	def doUpdate(self):
 		# Change direction
 		if self.changedir is not None:
@@ -120,18 +130,30 @@ class Snake(GameObject):
 			self.changedir = None
 
 		if self.alive:
-            # Leave SnakeCell behind
+			# Leave SnakeCell behind
 			snakecell = SnakeCell(self.x, self.y, self.board, self.cellcolor)
 			self.cells.append(snakecell)
 	
-            # Update position
+			# Update position
 			if self.direction == Snake.LEFT:
+				if self.wide:
+					cell2 = SnakeCell(self.x, self.y - 1, self.board, self.cellcolor)
+					self.cells.append(cell2)
 				self.x -= 1
 			elif self.direction == Snake.RIGHT:
+				if self.wide:
+					cell2 = SnakeCell(self.x, self.y + 1, self.board, self.cellcolor)
+					self.cells.append(cell2)
 				self.x += 1
 			elif self.direction == Snake.UP:
+				if self.wide:
+					cell2 = SnakeCell(self.x + 1, self.y, self.board, self.cellcolor)
+					self.cells.append(cell2)
 				self.y -= 1
 			elif self.direction == Snake.DOWN:
+				if self.wide:
+					cell2 = SnakeCell(self.x - 1, self.y, self.board, self.cellcolor)
+					self.cells.append(cell2)
 				self.y += 1
 
 			# Check if Snake if out of bounds
@@ -147,15 +169,17 @@ class Snake(GameObject):
 				if self.board.cellOccupied(self.x, self.y):
 					item = self.board.getCell(self.x, self.y)
 
-                    # Apply effect if item is a Powerup, otherwise die
+					# Apply effect if item is a Powerup, otherwise die
 					if hasattr(item, 'applyEffectTo'):
 						item.applyEffectTo(self)
 					else:
-						self.die()
-						return
+						if self.collision:
+							self.die()
+							return
 
 			# Update board
 			self.board.setCell(self, self.x, self.y)
+
 		else:
 			if len(self.cells) > 0:
 				cell = self.cells[len(self.cells) - 1]

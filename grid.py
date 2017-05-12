@@ -30,7 +30,7 @@ class Grid(object):
 	def cellOccupied(self, col, row):
 		return self.board[row][col] is not None
 
-	def render(self, surface):
+	def render(self, surface, hide=False):
 		self.image.blit(self.grid_bgnd, (0, 0))
 
 		for row in range(self.rows):
@@ -48,7 +48,8 @@ class Grid(object):
 				item = self.getCell(col, row)
 
 				if item is not None:
-					item.render(self.image)
+					if not hide:
+						item.render(self.image)
 
 		return self.image
 

@@ -1,3 +1,4 @@
+from random import randint
 import pygame
 
 # Base class for all Game Objects
@@ -15,6 +16,19 @@ class GameObject(object):
 		self.color = color
 
 		self.image.fill(self.color)
+
+	def randposition(self):
+		self.board.setCell(None, self.x, self.y)
+
+		empty = False
+		while not empty:
+			self.x = randint(0, self.board.cols - 1)
+			self.y = randint(0, self.board.rows - 1)
+
+			if not self.board.cellOccupied(self.x, self.y):
+				empty = True
+
+		self.board.setCell(self, self.x, self.y)
 
 	# Change color of image
 	def setColor(self, color):
