@@ -1,3 +1,4 @@
+import RPi.GPIO as GPIO
 from pygame.locals import *
 from random import randint
 from grid import Grid
@@ -27,10 +28,15 @@ POS_2 = (GRID_W - 1, GRID_H / 2) # Right
 POS_3 = (GRID_W / 2, GRID_H - 1) # Bottom
 POS_4 = (0, GRID_H / 2) # Left
 
+# GPIO input pins
+PINS = [4, 17, 27, 22, 5, 6, 13, 19]
+
+WHITE = (255,255,255)
+
 class Game(object):
 	def __init__(self):
 		# Set up display
-		flags = pygame.HWSURFACE | pygame.DOUBLEBUF
+		flags = pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.FULLSCREEN
 
 		if 'fullscreen' in sys.argv:
 			flags = flags | pygame.FULLSCREEN
@@ -53,19 +59,42 @@ class Game(object):
 		# Key inputs
 		# Key = player index
 		# Val = [left button, right button, left pressed, right pressed]
-		self.inputs = { 0 : [pygame.K_a, pygame.K_d, False, False], \
-						1 : [pygame.K_LEFT, pygame.K_RIGHT, False, False], \
-						2 : [pygame.K_f, pygame.K_h, False, False], \
-						3 : [pygame.K_j, pygame.K_l, False, False]}
-
 		self.inputs = {}
+		self.returnpressed = False
 
 		# Text rendering
 		self.font = pygame.font.SysFont("monospace", 15)
+		self.winfont = pygame.font.SysFont("monospace", 32)
 		
 		# Background image
 		self.background = pygame.image.load(BACKGROUND).convert()
 		self.background_rect = self.background.get_rect()
+
+		# Gamestate
+		self.running = False
+		self.twoplayer = False
+
+		self.won = False
+		self.winner = None
+
+	def start(self):
+		self.powerupclasses.append(GhostPU)
+		self.powerupclasses.append(SpeedPU)
+		self.powerupclasses.append(PortalPU)
+		self.powerupclasses.append(WidthPU)
+
+		self.players.append(Snake(POS_1[0], POS_1[1], self.board, Snake.DOWN))
+		self.players.append(Snake(POS_3[0], POS_3[1], self.board, Snake.UP, [0,0,255]))
+
+		self.inputs[0] = [PINS[0], PINS[1], False, False]
+		self.inputs[1] = [PINS[2], PINS[3], False, False]
+
+		if not self.twoplayer:
+			self.players.append(Snake(POS_2[0], POS_2[1], self.board, Snake.LEFT, [225, 0, 225]))
+			self.players.append(Snake(POS_4[0], POS_4[1], self.board, Snake.RIGHT, [255,255,0]))
+
+			self.inputs[2] = [PINS[4], PINS[5], False, False]
+			self.inputs[3] = [PINS[6], PINS[7], False, False]
 
 		# Board rotation
 		self.boardangle = 0.0
@@ -82,69 +111,86 @@ class Game(object):
 		self.renderblanked = False
 
 		# Powerup spawning
-		self.spawnfreq = 10
+		self.spawnfreq = 20
 
-		# Gamestate
-		self.running = False
-		self.oneleft = False
+		# Effect delays
+		self.thresholdA = 10000
+		self.thresholdB = 15000
 
-	def start(self):
-		self.powerupclasses.append(GhostPU)
-		self.powerupclasses.append(SpeedPU)
-		self.powerupclasses.append(PortalPU)
-		self.powerupclasses.append(WidthPU)
-
-		self.players.append(Snake(POS_1[0], POS_1[1], self.board, Snake.DOWN))
-		self.players.append(Snake(POS_3[0], POS_3[1], self.board, Snake.UP, [0,0,255]))
-
-		self.inputs[0] = [pygame.K_a, pygame.K_d, False, False]
-		self.inputs[1] = [pygame.K_LEFT, pygame.K_RIGHT, False, False]
-
-		if '4p' in sys.argv:
-			self.players.append(Snake(POS_2[0], POS_2[1], self.board, Snake.LEFT, [225, 0, 225]))
-			self.players.append(Snake(POS_4[0], POS_4[1], self.board, Snake.RIGHT, [255,255,0]))
-
-			self.inputs[2] = [pygame.K_f, pygame.K_h, False, False]
-			self.inputs[3] = [pygame.K_j, pygame.K_l, False, False]
+		self.canrotate = False
+		self.canflip = False
+		self.canblank = False
 
 		self.running = True
 
 		#print self.board
 		self.loop()
 
+	def reset(self):
+		self.running = False
+		self.twoplayer = not self.twoplayer
+
+		self.won = False
+		self.winner = None
+
+		del self.players[:]
+		del self.powerupclasses[:]
+		del self.powerups[:]
+		self.inputs.clear()
+		self.board.clear()
+
+		self.start()
+
 	def loop(self):
 		while self.running:
 			# Get time between frames
 			delta = self.clock.tick()
 
-			# Handle board rotation
-			if not self.rotating:
-				self.rotationtimer -= delta
+			if not self.canrotate:
+				self.thresholdA -= delta
 
-				if self.rotationtimer <= 0:
-					self.rotationtimer = 7500
-					self.rotating = True
+				if self.thresholdA <= 0:
+					self.canrotate = True
+					self.canflip = True
+			elif not self.canblank:
+				self.thresholdB -= delta
+
+				if self.thresholdB <= 0:
+					self.canblank = True
+
+			# Handle board rotation
+			if self.canrotate:
+				if not self.rotating:
+					self.rotationtimer -= delta
+
+					if self.rotationtimer <= 0:
+						self.rotationtimer = randint(3000, 10000)
+						self.rotating = True
 
 			# Handle input flipping
-			self.fliptimer -= delta
+			if self.canflip:
+				self.fliptimer -= delta
 
-			if self.fliptimer <= 0:
-				self.fliptimer = 5000
-				self.flipped = not self.flipped
+				if self.fliptimer <= 0:
+					self.fliptimer = randint(2500, 5000)
+					self.flipped = not self.flipped
 
 			# Handle render pausing
-			if not self.renderblanked:
-				self.blanktimer -= delta
+			if self.canblank:
+				if not self.renderblanked:
+					self.blanktimer -= delta
 
-				if self.blanktimer <= 0:
-					self.blanktimer = 15000
-					self.renderblanked = True
-			else:
-				self.blankdelay -= delta
+					if self.blanktimer <= 0:
+						self.blanktimer = 15000
+						self.renderblanked = True
+
+						self.flipped = False
+				else:
+					self.blankdelay -= delta
 				
-				if self.blankdelay <= 0:
-					self.blankdelay = 2000
-					self.renderblanked = False
+					if self.blankdelay <= 0:
+						self.blankdelay = 1500
+						self.renderblanked = False
 
 			# Spawn powerups
 			spawn = randint(1, 1000)
@@ -169,23 +215,32 @@ class Game(object):
 				right = value[1]
 				lpressed = value[2]
 				rpressed = value[3]
-
-				if keys[left]:
+				
+				if GPIO.input(left):
 					if not lpressed:
 						self.inputs[key][2] = True
 						self.players[key].changeDirection(-1 if not self.flipped else 1)
 				else:
 					self.inputs[key][2] = False
 					
-				if keys[right]:
+				if GPIO.input(right):
 					if not rpressed:
 						self.inputs[key][3] = True
 						self.players[key].changeDirection(1 if not self.flipped else -1)
 				else:
 					self.inputs[key][3] = False
-
+				
+				
 			if keys[K_ESCAPE]:
 				self.running = False
+
+			if keys[K_RETURN]:
+				if not self.returnpressed:
+					self.returnpressed = True
+					self.reset()
+					break
+			else:
+				self.returnpressed = False
 
 			# Update and render everything
 			self.update(delta)
@@ -197,6 +252,14 @@ class Game(object):
 	def update(self, delta):
 		for snake in self.players:
 			snake.update(delta)
+
+		alive = [x for x in self.players if x.alive]
+		if len(alive) == 1 and self.winner is None:
+			self.won = True
+
+			for i in range(len(self.players)):
+				if self.players[i].alive:
+					self.winner = i
 
 		for powerup in self.powerups:
 			powerup.update(delta)
@@ -211,6 +274,13 @@ class Game(object):
 		self.display.blit(self.background, self.background_rect)
 
 		# Draw everything to grid
+		if self.flipped:
+			self.board.setImage(self.board.grid_bgnd_b)
+		elif self.renderblanked:
+			self.board.setImage(self.board.grid_bgnd_c)
+		else:
+			self.board.setImage(self.board.grid_bgnd_a)
+
 		boardsurf = self.board.render(self.display, hide=self.renderblanked)
 		boardrect = boardsurf.get_rect()
 
@@ -225,20 +295,6 @@ class Game(object):
 
 			if self.boardangle >= 360:
 				self.boardangle = 0
-
-		# Invert colors when flipped
-		if self.flipped:
-			inv = pygame.Surface(boardrect.size, pygame.SRCALPHA)
-			inv.fill((255,255,255,255))
-			inv.blit(boardsurf, (0,0), None, pygame.BLEND_RGB_SUB)
-			boardsurf = inv
-
-		# Dark orange filter when blanked
-		if self.renderblanked:
-			orn = pygame.Surface(boardrect.size, pygame.SRCALPHA)
-			orn.fill((255,175,0,128))
-			orn.blit(boardsurf, (0,0), None, pygame.BLEND_RGB_MULT)
-			boardsurf = orn
 
 		# Rotate and display board
 		rotsurf = pygame.transform.rotate(boardsurf, self.boardangle)
@@ -255,35 +311,52 @@ class Game(object):
 			self.display.blit(img, pos)
 
 		# Display FPS
-		fps = self.font.render("FPS: {}".format(round(self.clock.get_fps(), 2)), 1, (255,255,255))
+		fps = self.font.render("FPS: {}".format(round(self.clock.get_fps(), 2)), 1, WHITE)
 		self.display.blit(fps, (0,0))
 
 		# Display rotation status
 		rotatestr = 'Rotating!'
-		if not self.rotating:
+		if not self.canrotate:
+			thresholdtime = int(self.thresholdA / 1000)
+			rotatestr = 'Rotation enabled in: {}'.format(thresholdtime)
+		elif not self.rotating:
 			rottime = int(self.rotationtimer / 1000)
 			rotatestr = 'Next rotation: {}'.format(rottime)
 			
-		rot = self.font.render(rotatestr, 1, (255,255,255))
+		rot = self.font.render(rotatestr, 1, WHITE)
 		self.display.blit(rot, (0,15))
 
 		# Display flip status
 		flipstr = 'Inputs flipped!'
-		if not self.flipped:
+		if not self.canflip:
+			thresholdtime = int(self.thresholdA / 1000)
+			flipstr = 'Flipping enabled in: {}'.format(thresholdtime)
+		elif not self.flipped:
 			fliptime = int(self.fliptimer / 1000)
 			flipstr = 'Next flip: {}'.format(fliptime)
 
-		flip = self.font.render(flipstr, 1, (255,255,255))
+		flip = self.font.render(flipstr, 1, WHITE)
 		self.display.blit(flip, (0,30))
 
 		# Display render pause status
 		pausestr = 'Rendering stopped'
-		if not self.renderblanked:
+		if not self.canblank:
+			thresholdtime = int(self.thresholdB / 1000)
+			pausestr = 'Blanking enabled in: {}'.format(thresholdtime)
+		elif not self.renderblanked:
 			pausetime = int(self.blanktimer / 1000)
-			pausestr = 'Next pause: {}'.format(pausetime)
+			pausestr = 'Next blank: {}'.format(pausetime)
 
-		ps = self.font.render(pausestr, 1, (255,255,255))
+		ps = self.font.render(pausestr, 1, WHITE)
 		self.display.blit(ps, (0,45))
+
+		# Did someone win?
+		if self.won:
+			winstr = "Player {} wins!".format(self.winner + 1)
+
+			wn = self.winfont.render(winstr, 1, self.players[self.winner].color)
+			sz = self.winfont.size(winstr)
+			self.display.blit(wn, (WINDOW_W / 2 - sz[0] / 2, WINDOW_H - GRID_OFFSET_Y / 2))
 
 		pygame.display.update()
 
@@ -298,7 +371,13 @@ if __name__ == '__main__':
 	args = sys.argv
 	print args
 
+	GPIO.setmode(GPIO.BCM)
+	
+	for pin in PINS:
+		GPIO.setup(pin, GPIO.IN, GPIO.PUD_DOWN)
+
 	pygame.init()
 
 	game = Game()
 	game.start()
+
