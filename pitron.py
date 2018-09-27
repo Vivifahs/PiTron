@@ -1,4 +1,3 @@
-import RPi.GPIO as GPIO
 from pygame.locals import *
 from random import randint
 from grid import Grid
@@ -86,15 +85,15 @@ class Game(object):
 		self.players.append(Snake(POS_1[0], POS_1[1], self.board, Snake.DOWN))
 		self.players.append(Snake(POS_3[0], POS_3[1], self.board, Snake.UP, [0,0,255]))
 
-		self.inputs[0] = [PINS[0], PINS[1], False, False]
-		self.inputs[1] = [PINS[2], PINS[3], False, False]
+		self.inputs[0] = [pygame.K_a, pygame.K_d, False, False]
+		self.inputs[1] = [pygame.K_LEFT, pygame.K_RIGHT, False, False]
 
 		if not self.twoplayer:
 			self.players.append(Snake(POS_2[0], POS_2[1], self.board, Snake.LEFT, [225, 0, 225]))
 			self.players.append(Snake(POS_4[0], POS_4[1], self.board, Snake.RIGHT, [255,255,0]))
 
-			self.inputs[2] = [PINS[4], PINS[5], False, False]
-			self.inputs[3] = [PINS[6], PINS[7], False, False]
+			self.inputs[2] = [pygame.K_j, pygame.K_l, False, False]
+			self.inputs[3] = [pygame.K_f, pygame.K_h, False, False]
 
 		# Board rotation
 		self.boardangle = 0.0
@@ -216,14 +215,14 @@ class Game(object):
 				lpressed = value[2]
 				rpressed = value[3]
 				
-				if GPIO.input(left):
+				if keys[left]:
 					if not lpressed:
 						self.inputs[key][2] = True
 						self.players[key].changeDirection(-1 if not self.flipped else 1)
 				else:
 					self.inputs[key][2] = False
 					
-				if GPIO.input(right):
+				if keys[right]:
 					if not rpressed:
 						self.inputs[key][3] = True
 						self.players[key].changeDirection(1 if not self.flipped else -1)
@@ -371,10 +370,10 @@ if __name__ == '__main__':
 	args = sys.argv
 	print args
 
-	GPIO.setmode(GPIO.BCM)
+	#GPIO.setmode(GPIO.BCM)
 	
-	for pin in PINS:
-		GPIO.setup(pin, GPIO.IN, GPIO.PUD_DOWN)
+	#for pin in PINS:
+	#	GPIO.setup(pin, GPIO.IN, GPIO.PUD_DOWN)
 
 	pygame.init()
 
